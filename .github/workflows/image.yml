@@ -167,7 +167,7 @@ jobs:
             docker run --rm "${@:2}" "$img" show-config --no-check | grep -qx "  $1" || { echo "want $1 with ${*:2}"; exit 1; }
           }
           want TP=4
-          want VARIANT=k4
+          want VARIANT=/etc/gr8/exlr8-manifest-k4.json
           want DISPRAM=1
           echo smoke OK
       - name: Push

@@ -6,7 +6,9 @@ _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg
 
 GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) from the K4 width
 of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4): every routed
-expert at 4 bits a weight. The KV cache is int4, on the four boxes.
+expert at 4 bits a weight (the MTP layer's at 3, the only width the release stores for it). The release's own
+manifests mix widths, so the recipe carries its K4 manifest (`manifests/exlr8-manifest-k4.json`). The KV cache is
+int4, on the four boxes.
 
 ## What you need
 
@@ -50,7 +52,9 @@ git pull && docker compose pull && docker compose up -d # on every box
 
 ## Knobs
 
-The recipe sets only the model, its K4 width and four boxes (`Dockerfile`). Every other option is gr8's launcher
+The recipe sets the model, its K4 manifest and four boxes, and trades some decode speed for memory: decode graphs
+for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP draft count (`S2_ADAPT=0`). The K4
+experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). The context is 384K tokens (`CAP=393216`). Every other option is gr8's launcher
 default, listed in [gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/e054e1a89ccddd4bc3821af8b68757481689acad/KNOBS.md).
 Set any of them in `.env`, the same line on every box.
 
