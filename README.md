@@ -54,8 +54,8 @@ git pull && docker compose pull && docker compose up -d # on every box
 
 The recipe sets the model, its K4 manifest and four boxes, and trades some decode speed for memory: decode graphs
 for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP draft count (`S2_ADAPT=0`). The K4
-experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). The context is 384K tokens (`CAP=393216`). Every other option is gr8's launcher
-default, listed in [gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/e054e1a89ccddd4bc3821af8b68757481689acad/KNOBS.md).
+experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). The context is 384K tokens (`CAP=393216`).
+Every other option is gr8's launcher default, listed in [gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/d203296847770854cfc3d0231fe35abd4663a722/KNOBS.md).
 Set any of them in `.env`, the same line on every box.
 
 - `PEERS`, `IPS`, `IPS2`: the boxes' addresses (`.env.example`). Unset, the boxes find each other through mentat.
