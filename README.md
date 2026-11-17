@@ -10,6 +10,8 @@ expert at 4 bits a weight (the MTP layer's at 3, the only width the release stor
 manifests mix widths, so the recipe carries its K4 manifest (`manifests/exlr8-manifest-k4.json`). The KV cache is
 int4, on the four boxes.
 
+![GLM-5.3 K4 on four GB10 boxes: decode, prefill and concurrency](docs/card.png)
+
 ## What you need
 
 - Four DGX Sparks, or other GB10 boxes such as the ASUS GX10, joined by their ConnectX ports (a switch, or cables
@@ -54,8 +56,10 @@ git pull && docker compose pull && docker compose up -d # on every box
 
 The recipe sets the model, its K4 manifest and four boxes, and trades some decode speed for memory: decode graphs
 for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP draft count (`S2_ADAPT=0`). The K4
-experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). The context is 384K tokens (`CAP=393216`).
-Every other option is gr8's launcher default, listed in [gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/d203296847770854cfc3d0231fe35abd4663a722/KNOBS.md).
+experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). One session can be 432K tokens long
+(`CAP=442368`), and `SHARE_LIMIT=16384` lets four sessions of about 74K tokens share the pool. Every other option is
+gr8's launcher default, listed in
+[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/2f3b287c4749e377b8ff42335503670d0f086594/KNOBS.md).
 Set any of them in `.env`, the same line on every box.
 
 - `PEERS`, `IPS`, `IPS2`: the boxes' addresses (`.env.example`). Unset, the boxes find each other through mentat.

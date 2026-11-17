@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "title": "GLM-5.3",
+  "variant": "exlr8 K4, int4 KV",
+  "summary": "GLM-5.3 on four GB10 boxes with gr8: every routed expert at K4, int4 KV, MTP and DFlash2 drafts, eight sessions sharing a KV pool that holds one 432K-token session or four of about 74K.",
+  "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+  "hardware": "ASUS GX10 / DGX Spark (GB10)",
+  "stack": [
+    "gr8",
+    "exlr8",
+    "DFlash2",
+    "int4 KV"
+  ],
+  "default_config": "tp4",
+  "configs": [
+    {
+      "id": "tp4",
+      "label": "TP=4",
+      "nodes": 4,
+      "decode": {
+        "code": 47.8,
+        "prose": 38.4,
+        "structured": 47.8
+      },
+      "prefill": [
+        {
+          "context": 8192,
+          "tps": 1529
+        },
+        {
+          "context": 32768,
+          "tps": 1518
+        },
+        {
+          "context": 131072,
+          "tps": 1274
+        }
+      ],
+      "concurrency": [
+        {
+          "streams": 1,
+          "aggregate_tps": 41.7
+        },
+        {
+          "streams": 2,
+          "aggregate_tps": 57.4
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 65.3
+        },
+        {
+          "streams": 8,
+          "aggregate_tps": 79.3
+        }
+      ],
+      "max_context": 442364,
+      "quality": [
+        {
+          "name": "Needle recall",
+          "value": "found at 128K"
+        }
+      ]
+    }
+  ]
+}

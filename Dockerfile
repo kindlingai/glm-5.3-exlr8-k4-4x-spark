@@ -140,9 +140,13 @@ ENV PATH=/opt/gr8/bin:$PATH PYTHONPATH=/opt/gr8/frontend HOME=/tmp GR8_CONTAINER
 # The K4 experts leave no room for gr8's TP=4 decode graphs and a KV pool, so the recipe trades some decode speed for
 # memory. DEC_BK=16384 with DEC_BK_MAX=32768 captures the step graphs for three context sizes (16K, 32K and the cap)
 # in place of eight, about 1.4 GiB a box each. S2_ADAPT=0 fixes the MTP draft count, which drops the graphs for the
-# other counts. CAP=393216: the launcher sizes the KV pool for the release's default widths, which leaves the K4 boxes no
-# memory; at 384K tokens each box keeps about 3 GiB free while it serves.
-ENV TP=4 VARIANT=/etc/gr8/exlr8-manifest-k4.json DISPRAM=1 DEC_BK=16384 DEC_BK_MAX=32768 S2_ADAPT=0 CAP=393216 \
+# other counts. The launcher sizes the KV pool for the release's default widths, which leaves the K4 boxes no memory,
+# so the recipe sets it. Every box holds a copy of each session's first SHARE_LIMIT tokens and a quarter of the rest.
+# SHARE_LIMIT=16384 lets four sessions of about 74K tokens share the pool without evicting each other's cached
+# prefixes. CAP=442368 is the longest one session can be: 1,920 pages of 64 tokens on each box, about 2.5 GiB free
+# while it serves.
+ENV TP=4 VARIANT=/etc/gr8/exlr8-manifest-k4.json DISPRAM=1 DEC_BK=16384 DEC_BK_MAX=32768 S2_ADAPT=0 CAP=442368 \
+    SHARE_LIMIT=16384 \
     MODEL=https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4@e0075a6cb5f24fdf9b94c2c0d5268b4b925d0d9a
 USER 1000:1000
 ENTRYPOINT ["/opt/gr8/docker/entrypoint.sh"]

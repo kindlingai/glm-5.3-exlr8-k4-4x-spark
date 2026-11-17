@@ -171,10 +171,11 @@ jobs:
           want TP=4
           want VARIANT=/etc/gr8/exlr8-manifest-k4.json
           want DISPRAM=1
-          want CAP=393216
+          want CAP=442368
           want S2_ADAPT=0
           want DEC_BK=16384
           want DEC_BK_MAX=32768
+          want SHARE_LIMIT=16384
           echo smoke OK
       - name: Push
         id: push
