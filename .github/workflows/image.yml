@@ -169,7 +169,7 @@ jobs:
               || { echo "want $1 with ${*:2}"; exit 1; }
           }
           want TP=4
-          want VARIANT=/etc/gr8/exlr8-manifest-k4.json
+          want VARIANT=/etc/gr8/exlr8-manifest-bit387.json
           want DISPRAM=1
           want CAP=442368
           want S2_ADAPT=0

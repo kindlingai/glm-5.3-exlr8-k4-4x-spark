@@ -1,8 +1,8 @@
 {
   "version": 1,
   "title": "GLM-5.3",
-  "variant": "exlr8 K4, int4 KV",
-  "summary": "GLM-5.3 on four GB10 boxes with gr8: every routed expert at K4, int4 KV, MTP and DFlash2 drafts, eight sessions sharing a KV pool that holds one 432K-token session or four of about 74K.",
+  "variant": "exlr8 bit387 (K4), int4 KV",
+  "summary": "GLM-5.3 on four GB10 boxes with gr8: every routed expert at K4 but layers 3-12 at K3, int4 KV, MTP and DFlash2 drafts, eight sessions sharing a KV pool that holds one 432K-token session or four of about 74K.",
   "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
   "hardware": "ASUS GX10 / DGX Spark (GB10)",
   "stack": [
