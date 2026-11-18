@@ -4,11 +4,13 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) from the K4 width
-of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4): every routed
-expert at 4 bits a weight (the MTP layer's at 3, the only width the release stores for it). The release's own
-manifests mix widths, so the recipe carries its K4 manifest (`manifests/exlr8-manifest-k4.json`). The KV cache is
-int4, on the four boxes.
+GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) from the `bit387`
+profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4) (0.7): every
+routed expert at 4 bits a weight except the first ten MoE layers (3-12) at 3, and the MTP layer at 3, the only width
+the release stores for it. `bit387` is statistically identical to the all-K4 `bit400`: full-vocabulary KL against
+BF16 of 0.0385 against 0.0381 on model-written text (1.5 standard errors apart), in 12 GB less (89 against 92 GB of
+experts per box). The recipe carries a copy of the release's manifest (`manifests/exlr8-manifest-bit387.json`). The
+KV cache is int4, on the four boxes.
 
 ![GLM-5.3 K4 on four GB10 boxes: decode, prefill and concurrency](docs/card.png)
 
@@ -54,7 +56,7 @@ git pull && docker compose pull && docker compose up -d # on every box
 
 ## Knobs
 
-The recipe sets the model, its K4 manifest and four boxes, and trades some decode speed for memory: decode graphs
+The recipe sets the model, the `bit387` manifest and four boxes, and trades some decode speed for memory: decode graphs
 for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP draft count (`S2_ADAPT=0`). The K4
 experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). One session can be 432K tokens long
 (`CAP=442368`), and `SHARE_LIMIT=16384` lets four sessions of about 74K tokens share the pool. Every other option is

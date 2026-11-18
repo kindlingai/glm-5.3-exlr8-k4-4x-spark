@@ -1,4 +1,4 @@
-# GLM-5.3 on four GB10 boxes (ASUS GX10 / DGX Spark) at K4: gr8, the K4 width of the exlr8 release, int4 KV.
+# GLM-5.3 on four GB10 boxes (ASUS GX10 / DGX Spark) at K4: gr8, the exlr8 release's bit387 profile, int4 KV.
 # Run the SAME file with the SAME .env (.env.example) on all four boxes. The head (the first address in PEERS) serves
 # the OpenAI API on port 8100.
 #

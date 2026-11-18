@@ -123,18 +123,19 @@ RUN apt-get update \
 WORKDIR /opt/gr8
 COPY gr8/ .
 COPY --from=bins /bin/ bin/
-COPY manifests/exlr8-manifest-k4.json /etc/gr8/exlr8-manifest-k4.json
+COPY manifests/exlr8-manifest-bit387.json /etc/gr8/exlr8-manifest-bit387.json
 # The container runs as uid 1000 on a read-only image. Its writable state is two volumes (compose.yaml): the model cache
 # and GR8_WORK_DIR, which docker fills from these empty, uid-1000 directories on first use.
 RUN mkdir -p /var/lib/gr8/home /var/lib/gr8/cache \
  && chown 1000:1000 /var/lib/gr8/home /var/lib/gr8/cache
 ENV PATH=/opt/gr8/bin:$PATH PYTHONPATH=/opt/gr8/frontend HOME=/tmp GR8_CONTAINER=1 GR8_MODEL=glm53 \
     GR8_WORK_DIR=/var/lib/gr8/home MODEL_CACHE=/var/lib/gr8/cache PY=/usr/bin/python3 FRONT_BIN=/opt/gr8/bin/g6front-rs
-# The recipe: four boxes, every expert of the release at K4, pinned to a Hugging Face commit (the model cache is keyed
-# by commit, so a new commit on the repo changes nothing until MODEL moves). The release has no K4 manifest for GLM-5.3,
-# so the recipe carries one (manifests/exlr8-manifest-k4.json): its home manifest with every width at 4, but layer 78,
-# whose experts are stored at K3 only. Every other option is gr8's launcher default (gr8/KNOBS.md); set one in .env to
-# change it.
+# The recipe: four boxes, the release's bit387 profile, pinned to a Hugging Face commit (the model cache is keyed by
+# commit, so a new commit on the repo changes nothing until MODEL moves). bit387 is every routed expert at K4 but the
+# gate, up and down of layers 3-12 at K3 (layer 78, the MTP layer, is stored at K3 only). Its KL against BF16 is
+# statistically identical to all-K4 bit400 (0.0385 against 0.0381 on model-written text, 1.5 SE) in 12 GB less. The
+# recipe carries a copy of the release's manifest (manifests/exlr8-manifest-bit387.json) and boots it by path. Every
+# other option is gr8's launcher default (gr8/KNOBS.md); set one in .env to change it.
 # DISPRAM=1: the 2 GiB display carveout of each box, lent by Kindling OS's dispramd (compose.yaml mounts its socket),
 # holds attention KV; without dispramd the engine allocates as usual.
 # The K4 experts leave no room for gr8's TP=4 decode graphs and a KV pool, so the recipe trades some decode speed for
@@ -145,8 +146,8 @@ ENV PATH=/opt/gr8/bin:$PATH PYTHONPATH=/opt/gr8/frontend HOME=/tmp GR8_CONTAINER
 # SHARE_LIMIT=16384 lets four sessions of about 74K tokens share the pool without evicting each other's cached
 # prefixes. CAP=442368 is the longest one session can be: 1,920 pages of 64 tokens on each box, about 2.5 GiB free
 # while it serves.
-ENV TP=4 VARIANT=/etc/gr8/exlr8-manifest-k4.json DISPRAM=1 DEC_BK=16384 DEC_BK_MAX=32768 S2_ADAPT=0 CAP=442368 \
+ENV TP=4 VARIANT=/etc/gr8/exlr8-manifest-bit387.json DISPRAM=1 DEC_BK=16384 DEC_BK_MAX=32768 S2_ADAPT=0 CAP=442368 \
     SHARE_LIMIT=16384 \
-    MODEL=https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4@e0075a6cb5f24fdf9b94c2c0d5268b4b925d0d9a
+    MODEL=https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4@9e25c28a2e8808d8b2599d780521fd6af24e7558
 USER 1000:1000
 ENTRYPOINT ["/opt/gr8/docker/entrypoint.sh"]
