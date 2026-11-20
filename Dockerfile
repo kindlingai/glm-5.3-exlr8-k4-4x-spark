@@ -146,8 +146,11 @@ ENV PATH=/opt/gr8/bin:$PATH PYTHONPATH=/opt/gr8/frontend HOME=/tmp GR8_CONTAINER
 # SHARE_LIMIT=16384 lets four sessions of about 74K tokens share the pool without evicting each other's cached
 # prefixes. CAP=442368 is the longest one session can be: 1,920 pages of 64 tokens on each box, about 2.5 GiB free
 # while it serves.
+# This K4 recipe prioritizes exactness: gr8 v1.1.0 enables eight bit-exact decode/prefill/DFlash2 kernels (KL=0) and
+# defaults MOE_UNION_CAP=48 at TP=4; we explicitly set MOE_UNION_CAP=0 here so K4 stays 100% uncapped/lossless.
+# .env.example also sets DEC_BK=2048 DEC_BK_MAX=2048 for extra memory headroom (about 4.3 GiB free after boot).
 ENV TP=4 VARIANT=/etc/gr8/exlr8-manifest-bit387.json DISPRAM=1 DEC_BK=16384 DEC_BK_MAX=32768 S2_ADAPT=0 CAP=442368 \
-    SHARE_LIMIT=16384 \
+    SHARE_LIMIT=16384 MOE_UNION_CAP=0 \
     MODEL=https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4@9e25c28a2e8808d8b2599d780521fd6af24e7558
 USER 1000:1000
 ENTRYPOINT ["/opt/gr8/docker/entrypoint.sh"]
