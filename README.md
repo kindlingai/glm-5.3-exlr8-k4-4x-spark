@@ -4,15 +4,58 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) from the `bit387`
-profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4) (0.7): every
+Quality-first GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) `v1.1.0` from the `bit387`
+profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/9e25c28a2e8808d8b2599d780521fd6af24e7558) (0.7): every
 routed expert at 4 bits a weight except the first ten MoE layers (3-12) at 3, and the MTP layer at 3, the only width
 the release stores for it. `bit387` is statistically identical to the all-K4 `bit400`: full-vocabulary KL against
 BF16 of 0.0385 against 0.0381 on model-written text (1.5 standard errors apart), in 12 GB less (89 against 92 GB of
-experts per box). The recipe carries a copy of the release's manifest (`manifests/exlr8-manifest-bit387.json`). The
-KV cache is int4, on the four boxes.
+experts per box). The recipe carries a copy of the release's manifest (`manifests/exlr8-manifest-bit387.json`), runs int4 KV, enables all eight bit-exact `gr8 v1.1.0` kernels (`KL = 0.00000`), and explicitly sets **`MOE_UNION_CAP=0`** so routed experts stay 100% uncapped.
 
 ![GLM-5.3 K4 on four GB10 boxes: decode, prefill and concurrency](docs/card.png)
+
+60.8 tok/s for one request writing code · 1,570 tok/s prefill on a 32K prompt (1,434 tok/s at 128K) · 8 requests at once, 82.0 tok/s in total · 100% uncapped pure-quality routing (`MOE_UNION_CAP=0`, `KL=0.00000`) · a 442,368-token KV pool · a fact hidden in a 128K prompt found
+
+## Results
+
+Four DGX Sparks on a 200G switch, TP=4, `gr8 v1.1.0` (`cdd1e09`), `bit387` v0.7 experts (`9e25c28a`), int4 KV, DFlash2 + MTP drafter, `MOE_UNION_CAP=0` (uncapped), `DEC_BK=2048 DEC_BK_MAX=2048` (`.env.example`), measured 2026-11-20 with gr8's benchmark (`bench/bench.py`, default level), one fresh boot, GPU clocks uncapped in timed stages. Every speed is in tokens per second (tok/s).
+
+One request, short prompts (46-54 tokens, up to 512 tokens out, 6 runs each):
+
+| work | code | prose | structured | counting |
+|---|---|---|---|---|
+| tok/s, mean | 60.8 | 36.2 | 72.9 | 76.5 |
+| lowest - highest run | 54.5 - 66.2 | 33.5 - 37.7 | 67.3 - 78.7 | 75.5 - 77.0 |
+
+Prefill, cold prompt (one run each):
+
+| prompt | first token | prefill tok/s | decode after it | first token, same prompt again (cached) |
+|---|---|---|---|---|
+| 8K tokens | 5.34 s | 1,530 | 34.6 tok/s | 0.17 s |
+| 32K tokens | 20.90 s | 1,570 | 31.0 tok/s | 0.47 s |
+| 128K tokens | 91.44 s | 1,434 | 29.6 tok/s | 0.29 s |
+
+Requests at once (short mixed prompts, 48-55 tokens, up to 512 tokens out each):
+
+| requests at once | 1 | 2 | 4 | 8 |
+|---|---|---|---|---|
+| total tok/s | 44.2 | 57.1 | 62.3 | 82.0 |
+| tok/s per request | 47.1 | 31.1 | 20.4 | 13.0 |
+| first token, median | 0.41 s | 0.79 s | 1.72 s | 3.37 s |
+
+Checks on the same boot:
+
+| check | result |
+|---|---|
+| smoke test | 14 of 14 |
+| fact hidden in a 131,475-token prompt | found |
+| count to 200, three times | 3 of 3 clean |
+| prompt cache | 437 of 438 cached |
+| suspect characters | 0 replies |
+| quality / routing | `MOE_UNION_CAP=0` (uncapped), 8 bit-exact `v1.1.0` kernels (`KL = 0.00000`) |
+| longest context (`max_model_len`) | 442,354 tokens |
+| lowest `MemAvailable` recorded on any box | 3.78 GiB (4.32 - 4.72 GiB after boot) |
+
+[kindling.json](kindling.json) has these numbers in a form a program can read. The card above is drawn from it.
 
 ## What you need
 
@@ -34,7 +77,7 @@ On each of the four boxes:
 ```bash
 git clone https://github.com/kindlingai/glm-5.3-exlr8-k4-4x-spark
 cd glm-5.3-exlr8-k4-4x-spark
-cp .env.example .env        # fill in PEERS (and IPS, IPS2) unless the boxes run mentat; the same file on every box
+cp .env.example .env        # fill in PEERS (and IPS, IPS2) unless the boxes run mentat; keep DRAFTER + DEC_BK=2048
 docker compose up -d
 ```
 
@@ -56,17 +99,24 @@ git pull && docker compose pull && docker compose up -d # on every box
 
 ## Knobs
 
-The recipe sets the model, the `bit387` manifest and four boxes, and trades some decode speed for memory: decode graphs
-for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP draft count (`S2_ADAPT=0`). The K4
-experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). One session can be 432K tokens long
-(`CAP=442368`), and `SHARE_LIMIT=16384` lets four sessions of about 74K tokens share the pool. Every other option is
-gr8's launcher default, listed in
-[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/4964aab7d3ff5fc2718e3ffef957578bad3fc22f/KNOBS.md).
-Set any of them in `.env`, the same line on every box.
+- **`MOE_UNION_CAP=0` (set in `Dockerfile` and `.env.example`):** `gr8 v1.1.0` enables eight bit-exact decode, prefill, and DFlash2 kernels at TP=4 (`KL = 0.00000`) and defaults `MOE_UNION_CAP=48` for the standard 3.25-bpw recipe. This K4 recipe explicitly pins `MOE_UNION_CAP=0` so routed experts stay 100% uncapped and exact.
+- **`DEC_BK=2048` and `DEC_BK_MAX=2048` (set in `.env.example`):** Captures three decode graph buckets (2K, 16K, cap) instead of 16K/32K/cap — bit-exact, leaving 4.3+ GiB `MemAvailable` per box after boot (`3.78 GiB` minimum during full benchmark).
+- **`CAP=442368`, `SHARE_LIMIT=16384`, `S2_ADAPT=0` (`Dockerfile`):** One session up to 432K tokens (`442,354` `max_model_len`), or four sessions of ~74K tokens sharing the pool.
+- **`PEERS`, `IPS`, `IPS2`:** The boxes' addresses (`.env.example`). Unset, the boxes find each other through mentat.
+- **`DISPRAM=1`:** Lends each box's 2 GiB display carveout to the KV cache when Kindling OS runs `dispramd` (0 turns it off).
 
-- `PEERS`, `IPS`, `IPS2`: the boxes' addresses (`.env.example`). Unset, the boxes find each other through mentat.
-- `DISPRAM`: 1 (the recipe's setting) lends each box's 2 GiB display memory to the KV cache when Kindling OS runs
-  `dispramd`. 0 turns it off.
+Every other option is gr8's launcher default, listed in
+[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/cdd1e0931047f55bba8f682a0ae79c4198668ca3/KNOBS.md).
+
+## Engine pin
+
+| | |
+|---|---|
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.0`](https://github.com/kindlingai/gr8/releases/tag/v1.1.0) at [`cdd1e09`](https://github.com/kindlingai/gr8/commit/cdd1e0931047f55bba8f682a0ae79c4198668ca3) (`gr8/` submodule) |
+| prebuilt engine image | `ghcr.io/kindlingai/gr8:v1.1.0@sha256:b22eedbd7902f65dbf2090897d75f5d92276cbf78a16bcde1f958aa56a306cf7` |
+| weights | [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/9e25c28a2e8808d8b2599d780521fd6af24e7558) (`9e25c28a`, `bit387`) |
+
+Run `python3 check.py` to verify that `kindling.json`, `gr8/` submodule, and `Dockerfile` agree.
 
 ## Help
 
