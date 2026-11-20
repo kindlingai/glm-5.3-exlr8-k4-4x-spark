@@ -61,7 +61,7 @@ for three context sizes (`DEC_BK=16384`, `DEC_BK_MAX=32768`) and a fixed MTP dra
 experts leave no room for gr8's defaults and a KV pool (`Dockerfile`). One session can be 432K tokens long
 (`CAP=442368`), and `SHARE_LIMIT=16384` lets four sessions of about 74K tokens share the pool. Every other option is
 gr8's launcher default, listed in
-[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/2f3b287c4749e377b8ff42335503670d0f086594/KNOBS.md).
+[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/4964aab7d3ff5fc2718e3ffef957578bad3fc22f/KNOBS.md).
 Set any of them in `.env`, the same line on every box.
 
 - `PEERS`, `IPS`, `IPS2`: the boxes' addresses (`.env.example`). Unset, the boxes find each other through mentat.
