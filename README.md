@@ -55,6 +55,15 @@ Checks on the same boot:
 | longest context (`max_model_len`) | 442,354 tokens |
 | lowest `MemAvailable` recorded on any box | 3.78 GiB (4.32 - 4.72 GiB after boot) |
 
+### Why `int4` KV preserves quality on a quality-first K4 recipe
+
+Even on this quality-first `bit387` (`MOE_UNION_CAP=0`) recipe, `gr8` uses **mixed-precision** `KV_FORMAT=int4` rather than naive blanket 4-bit quantization — compressing each part of the KV cache differently depending on its sensitivity:
+
+- **RoPE positional keys (64 dims) stay full BF16 (128 B/tok)** — positional geometry is never 4-bit quantized.
+- **Sparse-attention indexer keys (128 dims) stay FP8 E4M3 (132 B/tok)** — top-K sparse token retrieval stays sharp at long context.
+- **Only the 512-dim MLA latent is stored in 4-bit**, after an orthonormal **512-point Sylvester Hadamard rotation** (`H x`) with **per-32-dim FP16 scales** (`288 B` vs `528 B` in FP8). The rotation spreads channel outliers evenly across all 512 dims (+4–6 dB worst-case SQNR in layers 2–3), hitting **20.3 dB median SQNR at 416 B/row** (beating MXFP4 and matching NVFP4 in fewer bytes) while folding `H` directly into the decode weights (`KV4_FOLD=1`).
+- **Measured quality:** On full-vocabulary KL vs. BF16, INT4 adds only **+0.010 KL** over FP8 (~6.5% of weight quantization's own KL, at the BF16 microbatch noise floor), with **97.0%** top-1 token agreement vs. FP8 (`KL=0.0145`) and `qeval` **73/75 vs 74/75** (`McNemar p=1.0`). Shrinking each KV page block from 3.50 MB to 2.29 MB lets K4 experts (~89 GB/box) coexist with a 442K-token KV pool and 4.3+ GiB free RAM per box. Set `KV_FORMAT=fp8` in `.env` if you want FP8 KV with a smaller pool. Full math and study: [gr8 KV4.md](https://github.com/kindlingai/gr8/blob/main/docs/KV4.md).
+
 [kindling.json](kindling.json) has these numbers in a form a program can read. The card above is drawn from it.
 
 ## What you need
