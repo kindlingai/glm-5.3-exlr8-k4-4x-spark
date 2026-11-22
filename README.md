@@ -4,7 +4,7 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Quality-first GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) `v1.1.0` from the `bit387`
+Quality-first GLM-5.3 on four DGX Sparks (GB10, 128 GB each), served by [gr8](https://github.com/kindlingai/gr8) `v1.1.1` from the `bit387`
 profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/9e25c28a2e8808d8b2599d780521fd6af24e7558) (0.7): every
 routed expert at 4 bits a weight except the first ten MoE layers (3-12) at 3, and the MTP layer at 3, the only width
 the release stores for it. `bit387` is statistically identical to the all-K4 `bit400`: full-vocabulary KL against
@@ -115,14 +115,14 @@ git pull && docker compose pull && docker compose up -d # on every box
 - **`DISPRAM=1`:** Lends each box's 2 GiB display carveout to the KV cache when Kindling OS runs `dispramd` (0 turns it off).
 
 Every other option is gr8's launcher default, listed in
-[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/cdd1e0931047f55bba8f682a0ae79c4198668ca3/KNOBS.md).
+[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/a3f44a075854fc9af0ed56c6d43f7739705bc871/KNOBS.md).
 
 ## Engine pin
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.0`](https://github.com/kindlingai/gr8/releases/tag/v1.1.0) at [`cdd1e09`](https://github.com/kindlingai/gr8/commit/cdd1e0931047f55bba8f682a0ae79c4198668ca3) (`gr8/` submodule) |
-| prebuilt engine image | `ghcr.io/kindlingai/gr8:v1.1.0@sha256:b22eedbd7902f65dbf2090897d75f5d92276cbf78a16bcde1f958aa56a306cf7` |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.1`](https://github.com/kindlingai/gr8/releases/tag/v1.1.1) at [`a3f44a0`](https://github.com/kindlingai/gr8/commit/a3f44a075854fc9af0ed56c6d43f7739705bc871) (`gr8/` submodule) |
+| prebuilt engine image | `ghcr.io/kindlingai/gr8:v1.1.1@sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96` |
 | weights | [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/9e25c28a2e8808d8b2599d780521fd6af24e7558) (`9e25c28a`, `bit387`) |
 
 Run `python3 check.py` to verify that `kindling.json`, `gr8/` submodule, and `Dockerfile` agree.
